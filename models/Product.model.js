@@ -14,6 +14,15 @@ const productSchema = new Schema(
             unique:true,
         },
         images:[String],
+        description:{
+            type:String,
+            required:[true, "description is required"],
+        },
+        category:{
+            type:String,
+            enum:["headphones","speakers"],
+            required:true,
+        },
         rating:[{
             value:{
                 type:Number,
@@ -32,10 +41,6 @@ const productSchema = new Schema(
         discount:{
             type:Number,
             default:0,
-        },
-        description:{
-            type:String,
-            required:[true, "description is required"],
         },
         stock:{
             type:Number,
