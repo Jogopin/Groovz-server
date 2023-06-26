@@ -1,4 +1,4 @@
-const { Schema, model } = require("mongoose")
+const { Schema, model, default:mongoose } = require("mongoose")
 
 const productSchema = new Schema(
     {
@@ -50,4 +50,4 @@ const productSchema = new Schema(
 )
 const Product = model("Product", productSchema)
 
-module.exports=User
+module.exports=Product
