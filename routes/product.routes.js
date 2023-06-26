@@ -33,5 +33,23 @@ router.get("/products",(req,res,next)=>{
         })
 })
 
+//GET: a product by ID
+router.get("/products/:id",(req,res,next)=>{
+    
+    const productId = req.params.id
+
+    Product.findById(productId)
+        .then(product=>{
+            res.json(product)
+        })
+        .catch(error=>{
+            
+            console.log(`something happened getting the product ${productId}`,error)
+            res.status(500).json(error)
+        })
+})
+
+
+
 module.exports = router
 
