@@ -9,8 +9,8 @@ router.post("/products",(req,res,next)=>{
     const productData= {name, reference,price,discount,description,category,stock}
 
     Product.create(productData)
-        .then(responseProduct=>{
-            res.json(responseProduct)
+        .then(newProduct=>{
+            res.json(newProduct)
         })
         .catch(error=>{
             
@@ -22,6 +22,15 @@ router.post("/products",(req,res,next)=>{
 //GET: All the products
 router.get("/products",(req,res,next)=>{
 
+    Product.find()
+        .then(productsList=>{
+            res.json(productsList)
+        })
+        .catch(error=>{
+            
+            console.log("something happened getting the productsList",error)
+            res.status(500).json(error)
+        })
 })
 
 module.exports = router
