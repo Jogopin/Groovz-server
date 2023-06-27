@@ -14,8 +14,19 @@ router.post("/products",(req,res,next)=>{
         })
         .catch(error=>{
             
-            console.log("something happened creating a Product",error)
-            res.status(500).json(error)
+            //code 11000 duplicated key error
+            if(error.code === 11000){ 
+
+                const key = Object.keys(error.keyValue)[0]; // Get the key of the duplicate field
+                const value = error.keyValue[key]; // Get the value of the duplicate field
+
+                console.log(`The "${key}" "${value}" is already used`)
+                res.status(400).json({ message: `The "${key}" "${value}" is already used`});
+            }else{
+                console.log("something happened creating a Product",error)
+                res.status(500).json(error)
+
+            }
         })
     
 })
