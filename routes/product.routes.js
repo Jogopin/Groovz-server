@@ -8,8 +8,8 @@ const fileUploader = require("../config/cloudinary.config")
 //POST: create a product in the DB
 router.post("/products",(req,res,next)=>{
 
-    const {name, reference,price,discount,description,category,stock} = req.body
-    const productData= {name, reference,price,discount,description,category,stock}
+    const {name, reference,price,discount,description,category,stock,images} = req.body
+    const productData= {name, reference,price,discount,description,category,stock,images}
 
     Product.create(productData)
         .then(newProduct=>{
