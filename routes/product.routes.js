@@ -2,6 +2,9 @@ const express =require("express");
 const router = express.Router()
 const Product =  require("../models/Product.model")
 
+// ***** require fileUploader in order to use it *****
+const fileUploader = require("../config/cloudinary.config")
+
 //POST: create a product in the DB
 router.post("/products",(req,res,next)=>{
 
@@ -30,6 +33,19 @@ router.post("/products",(req,res,next)=>{
         })
     
 })
+//POST: Route that receives the image, sends it to Cloudinary via the fileUploader and returns the image URL
+router.post("/upload",fileUploader.single("imageUrl"),(req,res,next)=>{
+
+    // console.log("file is: ", req.file)
+
+    if(!req.file){
+        next(new Error("No file uploaded!"))
+        return
+    }
+
+    res.json({fileUrl:req.file.path})
+})
+
 //GET: All the products
 router.get("/products",(req,res,next)=>{
 
