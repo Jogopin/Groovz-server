@@ -23,17 +23,6 @@ const productSchema = new Schema(
             enum:["headphones","speakers"],
             required:true,
         },
-        rating:[{
-            value:{
-                type:Number,
-                required:[true,"value is required"],  
-            },
-            author:{
-                type: mongoose.Schema.Types.ObjectId,              
-                ref:"User"
-            },   
-            review:String,
-        }],
         price:{
             type:Number,
             required:[true, "price is required"],
