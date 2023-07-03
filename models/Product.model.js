@@ -45,7 +45,12 @@ const productSchema = new Schema(
         stock:{
             type:Number,
             required:[true,"stock is required"]
+        },
+        isHeroProduct:{
+            type:Boolean,
+            default:false
         }
+
 
         
     },
