@@ -32,7 +32,12 @@ module.exports = (app) => {
   app.use(logger("dev"));
 
   // To have access to `body` property in the request
-  app.use(express.json());
+  app.use((req,res,next)=>{
+    if(req.originalUrl === "/webhook"){
+      next()
+    }else{
+      express.json()(req,res,next)}
+  });
   app.use(express.urlencoded({ extended: false }));
   app.use(cookieParser());
 };

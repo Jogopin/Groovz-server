@@ -1,6 +1,7 @@
 const express = require("express")
 const Product = require("../models/Product.model");
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
+const bodyParser = require('body-parser')
 const router = express.Router();
 
 router.post("/checkout", (req, res, next) => {
@@ -60,6 +61,8 @@ router.post("/checkout", (req, res, next) => {
         });
       })
       .then((session) => {
+        console.log("checkout session=====================>",session)
+        console.log("session.id",session.id)
         res.json(session.url);
       })
       .catch(error=>{
@@ -70,5 +73,43 @@ router.post("/checkout", (req, res, next) => {
   
    
   });
+
+router.post('/webhook', bodyParser.raw({type: 'application/json'}), (req, res) => {
+  const sig = req.headers['stripe-signature']
+  const endpointSecret = process.env.WEBHOOK_ENDPOINT_SECRET
+  let event;
+  
+
+  try{
+    event = stripe.webhooks.constructEvent(req.body,sig,endpointSecret)
+      
+      
+    }catch(err){
+      
+      console.log("Webhook Error: ",err.message)
+      return res.status(400).send(`Webhook Error: ${err.message}`)
+  }
+
+  //Handle the event
+  switch (event.type) {
+    case 'checkout.session.completed':
+            
+      console.log('checkout session completed!!!!');
+      
+      break;
+    case 'checkout.session.expired':
+      
+      console.log('checkout session expired!!!!!');
+      break;
+    // ... handle other event types
+    default:
+      console.log(`Unhandled event type ${event.type}`);
+  }
+  
+  // Return a 200 response to acknowledge receipt of the event
+  res.json({received: true});
+});
+
+  
   
   module.exports = router
