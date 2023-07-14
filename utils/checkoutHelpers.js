@@ -1,6 +1,6 @@
-const formatLineItems = (productList,productsToCheckout)=>{
+const formatLineItems = (productsList,productsToCheckout)=>{
     // Map each product in the productList to the line_items format required by Stripe
-    const lineItems = productList.map((prod) => {
+    const lineItems = productsList.map((prod) => {
         const { quantity } = productsToCheckout.find(
           (item) => prod.reference === item.reference
         );
@@ -22,26 +22,35 @@ const formatLineItems = (productList,productsToCheckout)=>{
     return lineItems
       
 }
-const checkStock =(productList,productsToCheckout)=>{
+const checkStockAndFormatOrder =(productsList,productsToCheckout)=>{
     let outOfStockProducts = [];
+    let productsForOrder = []
 
-    productList.map(prod=>{
+    productsList.forEach(prod=>{
         const { quantity } = productsToCheckout.find(
             (item) => prod.reference === item.reference
           );
         if(prod.stock<quantity){
             outOfStockProducts.push({name:prod.name,stock:prod.stock})
+        }else{
+            productsForOrder.push({
+              product:prod._id,
+              quantity,
+              priceAtPurchase: prod.price-(prod.price*prod.discount/100) 
+            })
         }
         
     })
 
-    if(outOfStockProducts.length>0){
+    if(outOfStockProducts.length > 0){
         throw new Error(
             `The following products do not have enough stock: ${outOfStockProducts
               .map((p) => `${p.name} (only ${p.stock} left)`)
               .join(", ")}`
           );
     }
+    
+    return productsForOrder
 }
 
-module.exports ={formatLineItems,checkStock}
+module.exports ={formatLineItems,checkStockAndFormatOrder}
