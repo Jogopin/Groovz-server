@@ -94,6 +94,8 @@ router.post(
         sig,
         endpointSecret
       );
+
+      const stripeSessionId = event.data.object.id 
       //Handle the event
       switch (event.type) {
         case "checkout.session.completed":
@@ -107,10 +109,16 @@ router.post(
           if(!orderUpdated){           
             return res.status(404).json({ error: "No matching order found for the provided stripeSessionId" });
           }
+          //update the Stock in the DB
+          const updateStockPromises = orderUpdated.products.map(item=>{
+            return Product.findByIdAndUpdate(item.product.toString(),{$inc:{stock:-item.quantity}})
+          })
+          await Promise.all(updateStockPromises)
+
           console.log("checkout session completed!");
           break;
 
-          case "checkout.session.expired":
+        case "checkout.session.expired":
 
             const orderDeleted = await Order.findOneAndDelete({ stripeSessionId: event.data.object.id })
             
@@ -119,7 +127,7 @@ router.post(
             } else {
                 console.log(`checkout session expired => No order found with the provided stripeSessionId: ${stripeSessionId}`);
             }
-            break;
+          break;
         // ... handle other event types
         default:
           console.log(`Unhandled event type ${event.type}`);
