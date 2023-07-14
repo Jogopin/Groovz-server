@@ -52,7 +52,7 @@ router.post("/checkout", async (req, res, next) => {
       total: session.amount_total/100,
       stripeSessionId: session.id,
       address: customerData.address,
-      name: customerData.name,
+      firstName: customerData.firstName,
       lastName: customerData.lastName,
       email: customerData.email,
     };
