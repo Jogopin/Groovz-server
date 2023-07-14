@@ -1,24 +1,28 @@
 const express = require("express");
+const router = express.Router();
 const Product = require("../models/Product.model");
+const Order = require("../models/Order.model");
 const stripe = require("stripe")(process.env.STRIPE_SECRET_KEY);
 const bodyParser = require("body-parser");
+const { STATUS } = require("../constants");
 const {
   formatLineItems,
   checkStockAndFormatOrder,
 } = require("../utils/checkoutHelpers");
-const Order = require("../models/Order.model");
-const router = express.Router();
 
 router.post("/checkout", async (req, res, next) => {
   try {
-    const { productsToCheckout,customerData } = req.body;
+    const { productsToCheckout, customerData } = req.body;
     const userId = customerData.userId ? customerData.userId : null;
 
     // Respond early if no products were supplied in the request
     if (productsToCheckout.length === 0) {
       return res.status(400).json({ message: "No items in the cart" });
-      
     }
+
+    const newCustomerStripe = await stripe.customers.create({
+      email: customerData.email,
+    });
 
     // Extract the references from the client request
     const referencesArray = productsToCheckout.map((prod) => prod.reference);
@@ -31,7 +35,7 @@ router.post("/checkout", async (req, res, next) => {
       productsList,
       productsToCheckout
     );
-    // create line_items format required by Stripe
+    // Create line_items format required by Stripe
     const lineItems = formatLineItems(productsList, productsToCheckout);
     // Create Stripe Checkout session with the constructed line items
     const session = await stripe.checkout.sessions.create({
@@ -40,8 +44,8 @@ router.post("/checkout", async (req, res, next) => {
       line_items: lineItems,
       success_url: `${process.env.ORIGIN}/success`,
       cancel_url: `${process.env.ORIGIN}/cancel`,
+      customer: newCustomerStripe.id,
       // metadata: {
-      //   user_data: "probando uno dos tres",
       //   product_data: JSON.stringify(productsToCheckout),
       // },
     });
@@ -49,20 +53,23 @@ router.post("/checkout", async (req, res, next) => {
     const orderData = {
       user: userId,
       products: productsForOrder,
-      total: session.amount_total/100,
+      total: session.amount_total / 100,
       stripeSessionId: session.id,
       address: customerData.address,
       firstName: customerData.firstName,
       lastName: customerData.lastName,
       email: customerData.email,
     };
-    const newOrder = await Order.create(orderData);
-    console.log(newOrder)
+
+    await Order.create(orderData);
+
     res.json(session.url);
-    
   } catch (error) {
     if (error.message) {
-      console.log(`An error occurred during the checkout process`, error.message);
+      console.log(
+        `An error occurred during the checkout process`,
+        error.message
+      );
       res.status(400).json({ message: error.message });
     } else {
       console.log(`An error occurred during the checkout process`, error);
@@ -77,42 +84,53 @@ router.post("/checkout", async (req, res, next) => {
 router.post(
   "/webhook",
   bodyParser.raw({ type: "application/json" }),
-  (req, res) => {
-    const sig = req.headers["stripe-signature"];
-    const endpointSecret = process.env.WEBHOOK_ENDPOINT_SECRET;
-    let event;
-
-    // Construct the event from the raw request body and verify the signature
+  async (req, res) => {
     try {
-      event = stripe.webhooks.constructEvent(req.body, sig, endpointSecret);
+      const sig = req.headers["stripe-signature"];
+      const endpointSecret = process.env.WEBHOOK_ENDPOINT_SECRET;
+      // Construct the event from the raw request body and verify the signature
+      const event = stripe.webhooks.constructEvent(
+        req.body,
+        sig,
+        endpointSecret
+      );
+      //Handle the event
+      switch (event.type) {
+        case "checkout.session.completed":
+          const stripePaymentId = event.data.object.payment_intent;
+          // Update the Order 
+          const orderUpdated = await Order.findOneAndUpdate(
+            { stripeSessionId: event.data.object.id },
+            { stripePaymentId, status: STATUS.PAID },
+            { new: true }
+          );
+          if(!orderUpdated){           
+            return res.status(404).json({ error: "No matching order found for the provided stripeSessionId" });
+          }
+          console.log("checkout session completed!");
+          break;
+
+          case "checkout.session.expired":
+
+            const orderDeleted = await Order.findOneAndDelete({ stripeSessionId: event.data.object.id })
+            
+            if(orderDeleted){
+                console.log(`checkout session expired => order: ${orderDeleted.id} deleted`);
+            } else {
+                console.log(`checkout session expired => No order found with the provided stripeSessionId: ${stripeSessionId}`);
+            }
+            break;
+        // ... handle other event types
+        default:
+          console.log(`Unhandled event type ${event.type}`);
+      }
+
+      // Return a 200 response to acknowledge receipt of the event
+      res.json({ received: true });
     } catch (err) {
       console.log("Webhook Error: ", err.message);
-      return res.status(400).send(`Webhook Error: ${err.message}`);
+      return res.status(500).send(`Webhook Error: ${err.message}`);
     }
-
-    //Handle the event
-    switch (event.type) {
-      case "checkout.session.completed":
-        console.log("--------------------------------");
-        const totalPaid = event.data.object.amount_total / 100;
-        console.log(totalPaid)
-        // const metadata = event.data.object.metadata;
-        // console.log("metadata", metadata);
-        // const productData = JSON.parse(metadata.product_data);
-        // console.log("product_data", productData);
-        console.log("stripePaimentId")
-        console.log("checkout session completed!!!!");
-        break;
-      case "checkout.session.expired":
-        console.log("checkout session expired!!!!!");
-        break;
-      // ... handle other event types
-      default:
-        console.log(`Unhandled event type ${event.type}`);
-    }
-
-    // Return a 200 response to acknowledge receipt of the event
-    res.json({ received: true });
   }
 );
 
