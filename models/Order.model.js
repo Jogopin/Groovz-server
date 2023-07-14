@@ -6,7 +6,7 @@ const orderSchema = new Schema(
     user: {
       type: Schema.Types.ObjectId,
       ref: "User",
-      required: true,
+      
     },
     products: [
       {
@@ -33,10 +33,13 @@ const orderSchema = new Schema(
       type: String,
       required: true,
     },
+    stripePaimentId:{
+        type:String,
+    },
     status: {
       type: String,
       enum: [STATUS.PENDING, STATUS.PAID, STATUS.SHIPPED, STATUS.DELIVERED],
-      default: [STATUS.PENDING],
+      default: STATUS.PENDING,
     },
     // Storing the customer's information at the time of the order
     // This is important for maintaining historical accuracy, improving performance,
