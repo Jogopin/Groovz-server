@@ -33,7 +33,7 @@ const orderSchema = new Schema(
       type: String,
       required: true,
     },
-    stripePaimentId:{
+    stripePaymentId:{
         type:String,
     },
     status: {
