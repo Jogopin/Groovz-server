@@ -22,6 +22,16 @@ const userSchema = new Schema(
       type:Boolean,
       default:false,
     },
+    firstName:{
+      type: String
+      
+    },
+    lastName:{
+      type:String
+    },
+    address:{
+      type:String
+    }
   },
   {
     // this second object adds extra properties: `createdAt` and `updatedAt`
