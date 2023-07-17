@@ -128,4 +128,23 @@ router.get("/verify", isAuthenticated, (req, res, next) => {
   res.status(200).json(req.payload);
 });
 
+router.get("/user/:id", isAuthenticated, (req, res, next) => {
+  const authenticatedUser = req.payload;
+  const requestedUserId = req.params.id;
+
+  if (authenticatedUser._id !== requestedUserId) {
+    return res
+      .status(403)
+      .json({ message: "you dont have authorization to get this data" });
+  }
+
+  User.findById(requestedUserId)
+    .then((userDetails) => {
+      res.json(userDetails);
+    })
+    .catch((error) => {
+      console.error("error getting userDetails", error);
+      res.status(500).json({ message: "An error occurred while fetching user details." });
+    });
+});
 module.exports = router;
