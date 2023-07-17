@@ -128,6 +128,7 @@ router.get("/verify", isAuthenticated, (req, res, next) => {
   res.status(200).json(req.payload);
 });
 
+// GET /auth/user/:id  - Used to get details of an user
 router.get("/user/:id", isAuthenticated, (req, res, next) => {
   const authenticatedUser = req.payload;
   const requestedUserId = req.params.id;
@@ -147,4 +148,23 @@ router.get("/user/:id", isAuthenticated, (req, res, next) => {
       res.status(500).json({ message: "An error occurred while fetching user details." });
     });
 });
+router.put("/user/:id",isAuthenticated,(req,res,next)=>{
+  const authenticatedUser = req.payload;
+  const requestedUserId = req.params.id;
+  const {firstName,lastName,address} = req.body
+  
+  if (authenticatedUser._id !== requestedUserId) {
+    return res
+      .status(403)
+      .json({ message: "you dont have authorization to get this data" });
+  }
+  User.findByIdAndUpdate(requestedUserId,{firstName,lastName,address},{new:true})
+    .then(updatedUser=>{
+      res.status(200).json({message: "Details saved!" });
+    })
+    .catch(error=>{
+      console.error("error updating the user details",error)
+      res.status(500).json({message:"an error occurred updating user details"})
+    })
+})
 module.exports = router;
