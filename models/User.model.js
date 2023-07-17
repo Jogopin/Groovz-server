@@ -23,14 +23,16 @@ const userSchema = new Schema(
       default:false,
     },
     firstName:{
-      type: String
-      
+      type: String,
+      default:null      
     },
     lastName:{
-      type:String
+      type:String,
+      default:null
     },
     address:{
-      type:String
+      type:String,
+      default:null
     }
   },
   {
