@@ -43,7 +43,7 @@ router.post("/checkout", async (req, res, next) => {
       mode: "payment",
       line_items: lineItems,
       success_url: `${process.env.ORIGIN}/success`,
-      cancel_url: `${process.env.ORIGIN}/cancel`,
+      cancel_url: `${process.env.ORIGIN}/checkout`,
       customer: newCustomerStripe.id,
       // metadata: {
       //   product_data: JSON.stringify(productsToCheckout),
