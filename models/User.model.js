@@ -17,6 +17,7 @@ const userSchema = new Schema(
     username: {
       type: String,
       required: [true, "Name is required."],
+      trim: true
     },
     isAdmin: {
       type:Boolean,
@@ -24,15 +25,18 @@ const userSchema = new Schema(
     },
     firstName:{
       type: String,
-      default:null      
+      default:null,
+      trim: true     
     },
     lastName:{
       type:String,
-      default:null
+      default:null,
+      trim: true
     },
     address:{
       type:String,
-      default:null
+      default:null,
+      trim: true
     }
   },
   {

@@ -18,6 +18,7 @@ const reviewSchema = new Schema(
     },
     reviewText: {
       type: String,
+      trim: true,
     }
   },
   {
