@@ -140,8 +140,9 @@ router.get("/user/:id", isAuthenticated, (req, res, next) => {
   }
 
   User.findById(requestedUserId)
-    .then((userDetails) => {
-      res.json(userDetails);
+    .then(response => {
+      const {firstName,lastName,address,email,username,createdAt} = response
+      res.json({firstName,lastName,address,email,username,createdAt});
     })
     .catch((error) => {
       console.error("error getting userDetails", error);
