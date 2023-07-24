@@ -3,20 +3,27 @@ const router = express.Router()
 const Product =  require("../models/Product.model")
 
 // ***** require fileUploader in order to use it *****
-const fileUploader = require("../config/cloudinary.config")
+const fileUploader = require("../config/cloudinary.config");
+const { isAuthenticated } = require("../middleware/jwt.middleware");
+const User = require("../models/User.model");
 
 //POST: create a product in the DB
-router.post("/products",(req,res,next)=>{
-
+router.post("/products",isAuthenticated,(req,res,next)=>{
+    const userId = req.payload._id
     const {name, reference,price,discount,description,category,stock,images} = req.body
     const productData= {name, reference,price,discount,description,category,stock,images}
-
-    Product.create(productData)
+    
+    User.findById(userId)
+        .then(userData=>{
+            if(!userData.isAdmin){
+                throw new Error(`${userData.username} does not have authorization to add a product`)
+            }
+            return Product.create(productData)
+        })   
         .then(newProduct=>{
             res.json(newProduct)
         })
-        .catch(error=>{
-            
+        .catch(error=>{            
             //code 11000 duplicated key error
             if(error.code === 11000){ 
 
@@ -27,7 +34,7 @@ router.post("/products",(req,res,next)=>{
                 res.status(400).json({ message: `The "${key}" "${value}" is already used`});
             }else{
                 console.log("something happened creating a Product",error)
-                res.status(500).json(error)
+                res.status(500).json({message: error.message})
 
             }
         })
