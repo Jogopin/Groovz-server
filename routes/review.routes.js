@@ -1,11 +1,13 @@
 const express = require("express")
 const router = express.Router()
 const Review = require("../models/Review.model")
+const { isAuthenticated } = require("../middleware/jwt.middleware")
 
 //POST: create a new Review in the DB
-router.post("/reviews",(req,res,next)=>{
+router.post("/reviews",isAuthenticated,(req,res,next)=>{
 
-    const { product,user,rating,reviewText} = req.body
+    const user = req.payload._id
+    const { product,rating,reviewText} = req.body
   
     const reviewData = { product,user,rating,reviewText}
     
