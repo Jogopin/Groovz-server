@@ -29,6 +29,9 @@ app.use("/",reviewRoutes)
 
 const paymentRoutes = require("./routes/payment.routes")
 app.use("/",paymentRoutes)
+
+const orderRoutes = require("./routes/order.routes")
+app.use("/",orderRoutes)
 // ❗ To handle errors. Routes that don't exist or errors that you handle in specific routes
 require("./error-handling")(app);
 
