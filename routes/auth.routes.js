@@ -44,14 +44,15 @@ router.post("/signup", (req, res, next) => {
   }
 
   // Check the users collection if a user with the same email already exists
-  User.findOne({ email })
+  User.findOne({$or:[{email:email},{username:username}]})
     .then((foundUser) => {
       // If the user with the same email already exists, send an error response
       if (foundUser) {
-        res.status(400).json({ message: "User already exists." });
-        return;
+        res.status(400).json({ message: "Email or username already exists." });
+        return 
       }
-
+      
+      
       // If email is unique, proceed to hash the password
       const salt = bcrypt.genSaltSync(saltRounds);
       const hashedPassword = bcrypt.hashSync(password, salt);
@@ -61,10 +62,12 @@ router.post("/signup", (req, res, next) => {
       return User.create({ email, password: hashedPassword, username });
     })
     .then((createdUser) => {
+      if(!createdUser){
+        return
+      }
       // Deconstruct the newly created user object to omit the password
       // We should never expose passwords publicly
       const { email, username, _id } = createdUser;
-
       // Create a new object that doesn't expose the password
       const user = { email, username, _id };
 
