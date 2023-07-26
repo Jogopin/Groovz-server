@@ -17,7 +17,8 @@ const userSchema = new Schema(
     username: {
       type: String,
       required: [true, "Name is required."],
-      trim: true
+      trim: true,
+      unique:true,
     },
     isAdmin: {
       type:Boolean,
