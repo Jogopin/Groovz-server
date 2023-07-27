@@ -16,9 +16,7 @@ router.post("/reviews",isAuthenticated,(req,res,next)=>{
             res.json(newReview)
         })
         .catch(error=>{
-            
-            console.log("something happened creating a review",error)
-            res.status(500).json(error)
+            next(error)
         })
 })
 
@@ -33,10 +31,9 @@ router.get("/reviews/:productId",(req,res,next)=>{
         .then(reviewList=>{
             res.json(reviewList)
         })
-        .catch(error=>{
-            
-            console.log(`something happened getting a list of reviews for "${productId}"`,error)
-            res.status(500).json(error)
+        .catch(error=>{            
+            console.log(`something happened getting a list of reviews for "${productId}"`)
+            next(error)
         })
 
 })
