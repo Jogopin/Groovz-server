@@ -1,6 +1,7 @@
 const express = require("express")
 const Order = require("../models/Order.model")
 const { isAuthenticated } = require("../middleware/jwt.middleware")
+const ErrorHandler = require("../error-handling/ErrorHandler")
 const router = express.Router()
 //GET: Order from user
 router.get("/orders/:id",isAuthenticated,(req,res,next)=>{
@@ -8,8 +9,7 @@ router.get("/orders/:id",isAuthenticated,(req,res,next)=>{
     const authenticatedUserId = req.payload._id
     
     if(userId!==authenticatedUserId){
-        res.status(401).json({message:"you dont have authorization for this "})
-        return
+        return next(new ErrorHandler(401,`you dont have authorization to check this orders`))
     }
     Order.find({user:userId}).populate({path:"products.product",select:"images name reference"})
         .then(ordersList=>{
@@ -17,7 +17,7 @@ router.get("/orders/:id",isAuthenticated,(req,res,next)=>{
             
         })
         .catch(error=>{
-            console.log(error)
+            next(error)
         })
 })
 
