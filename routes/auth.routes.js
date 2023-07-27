@@ -12,6 +12,7 @@ const User = require("../models/User.model");
 
 // Require necessary (isAuthenticated) middleware in order to control access to specific routes
 const { isAuthenticated } = require("../middleware/jwt.middleware.js");
+const ErrorHandler = require("../error-handling/ErrorHandler");
 
 // How many rounds should bcrypt run the salt (default - 10 rounds)
 const saltRounds = 10;
@@ -22,25 +23,20 @@ router.post("/signup", (req, res, next) => {
 
   // Check if email or password or name are provided as empty strings
   if (email === "" || password === "" || username === "") {
-    res.status(400).json({ message: "Provide email, password and name" });
-    return;
+    return next(new ErrorHandler(400,"Provide email, password and name"))
   }
 
   // This regular expression check that the email is of a valid format
   const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
   if (!emailRegex.test(email)) {
-    res.status(400).json({ message: "Provide a valid email address." });
-    return;
+    return next(new ErrorHandler(400,"Provide a valid email address."))
   }
 
   // This regular expression checks password for special characters and minimum length
   const passwordRegex = /(?=.*\d)(?=.*[a-z])(?=.*[A-Z]).{6,}/;
   if (!passwordRegex.test(password)) {
-    res.status(400).json({
-      message:
-        "Password must have at least 6 characters and contain at least one number, one lowercase and one uppercase letter.",
-    });
-    return;
+    return next(new ErrorHandler(400,"Password must have at least 6 characters and contain at least one number, one lowercase and one uppercase letter."))
+    
   }
 
   // Check the users collection if a user with the same email already exists
@@ -48,8 +44,7 @@ router.post("/signup", (req, res, next) => {
     .then((foundUser) => {
       // If the user with the same email already exists, send an error response
       if (foundUser) {
-        res.status(400).json({ message: "Email or username already exists." });
-        return 
+        throw new ErrorHandler(400,"Email or username already exists.")
       }
       
       
@@ -62,19 +57,16 @@ router.post("/signup", (req, res, next) => {
       return User.create({ email, password: hashedPassword, username });
     })
     .then((createdUser) => {
-      if(!createdUser){
-        return
-      }
       // Deconstruct the newly created user object to omit the password
-      // We should never expose passwords publicly
+      
       const { email, username, _id } = createdUser;
       // Create a new object that doesn't expose the password
       const user = { email, username, _id };
 
-      // Send a json response containing the user object
+      
       res.status(201).json({ user: user });
     })
-    .catch((err) => next(err)); // In this case, we send error handling to the error handling middleware.
+    .catch((err) => next(err)); 
 });
 
 // POST  /auth/login - Verifies username and password and returns a JWT
@@ -83,17 +75,16 @@ router.post("/login", (req, res, next) => {
 
   // Check if username or password are provided as empty string
   if (username === "" || password === "") {
-    res.status(400).json({ message: "Provide email and password." });
-    return;
+    return next(new ErrorHandler(400,"Provide email and password."))
+   
   }
 
   // Check the users collection if a user with the same username exists
   User.findOne({ username })
     .then((foundUser) => {
       if (!foundUser) {
-        // If the user is not found, send an error response
-        res.status(401).json({ message: "User not found." });
-        return;
+        // If the user is not found
+        throw new ErrorHandler(401,"User not found.") 
       }
 
       // Compare the provided password with the one saved in the database
@@ -115,6 +106,7 @@ router.post("/login", (req, res, next) => {
         // Send the token as the response
         res.status(200).json({ authToken: authToken });
       } else {
+
         res.status(401).json({ message: "Unable to authenticate the user" });
       }
     })
@@ -137,9 +129,7 @@ router.get("/user/:id", isAuthenticated, (req, res, next) => {
   const requestedUserId = req.params.id;
 
   if (authenticatedUser._id !== requestedUserId) {
-    return res
-      .status(403)
-      .json({ message: "you dont have authorization to get this data" });
+    return next(new ErrorHandler(403,`${req.payload.username} does not have authorization to get this data`))
   }
 
   User.findById(requestedUserId)
@@ -148,27 +138,26 @@ router.get("/user/:id", isAuthenticated, (req, res, next) => {
       res.json({firstName,lastName,address,email,username,createdAt});
     })
     .catch((error) => {
-      console.error("error getting userDetails", error);
-      res.status(500).json({ message: "An error occurred while fetching user details." });
+      console.error("Error getting userDetails");
+      next(error)
     });
 });
+
 router.put("/user/:id",isAuthenticated,(req,res,next)=>{
   const authenticatedUser = req.payload;
   const requestedUserId = req.params.id;
   const {firstName,lastName,address} = req.body
   
   if (authenticatedUser._id !== requestedUserId) {
-    return res
-      .status(403)
-      .json({ message: "you dont have authorization to get this data" });
+    return next(new ErrorHandler(403,`${req.payload.username} does not have authorization to update this data`))
   }
   User.findByIdAndUpdate(requestedUserId,{firstName,lastName,address},{new:true})
     .then(updatedUser=>{
-      res.status(200).json({message: "Details saved!" });
+      res.status(200).json(updatedUser);
     })
     .catch(error=>{
-      console.error("error updating the user details",error)
-      res.status(500).json({message:"an error occurred updating user details"})
+      console.error("Error updating the user details")
+      next(error)
     })
 })
 module.exports = router;
