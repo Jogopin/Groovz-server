@@ -59,7 +59,9 @@ router.get("/products",(req,res,next)=>{
 router.get("/products/:id",(req,res,next)=>{
     
     const productId = req.params.id
-
+    if (!productId.match(/^[0-9a-fA-F]{24}$/)) {  // MongoDB ObjectId validation
+        return next( new ErrorHandler(400,"Invalid product ID format."))
+    }
     Product.findById(productId)
         .then(product=>{
             if (!product) {
