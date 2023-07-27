@@ -9,6 +9,7 @@ const {
   formatLineItems,
   checkStockAndFormatOrder,
 } = require("../utils/checkoutHelpers");
+const ErrorHandler = require("../error-handling/ErrorHandler");
 
 router.post("/checkout", async (req, res, next) => {
   try {
@@ -17,7 +18,7 @@ router.post("/checkout", async (req, res, next) => {
 
     // Respond early if no products were supplied in the request
     if (productsToCheckout.length === 0) {
-      return res.status(400).json({ message: "No items in the cart" });
+      throw new ErrorHandler(400,"no items in the cart")
     }
 
     const newCustomerStripe = await stripe.customers.create({
@@ -65,26 +66,15 @@ router.post("/checkout", async (req, res, next) => {
 
     res.json(session.url);
   } catch (error) {
-    if (error.message) {
-      console.log(
-        `An error occurred during the checkout process`,
-        error.message
-      );
-      res.status(400).json({ message: error.message });
-    } else {
-      console.log(`An error occurred during the checkout process`, error);
-      res.status(500).json({
-        message:
-          "An error occured while processing your request. Please try again later",
-      });
-    }
+
+      next(error)
   }
 });
 
 router.post(
   "/webhook",
   bodyParser.raw({ type: "application/json" }),
-  async (req, res) => {
+  async (req, res, next) => {
     try {
       const sig = req.headers["stripe-signature"];
       const endpointSecret = process.env.WEBHOOK_ENDPOINT_SECRET;
@@ -107,7 +97,7 @@ router.post(
             { new: true }
           );
           if(!orderUpdated){           
-            return res.status(404).json({ error: "No matching order found for the provided stripeSessionId" });
+            return next(new ErrorHandler(404,"No matching order found for the provided stripeSessionId"));
           }
           //update the Stock in the DB
           const updateStockPromises = orderUpdated.products.map(item=>{
@@ -135,9 +125,9 @@ router.post(
 
       // Return a 200 response to acknowledge receipt of the event
       res.json({ received: true });
-    } catch (err) {
-      console.log("Webhook Error: ", err.message);
-      return res.status(500).send(`Webhook Error: ${err.message}`);
+    } catch (error) {
+      next(error)
+      
     }
   }
 );
