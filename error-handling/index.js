@@ -44,7 +44,12 @@ module.exports = (app) => {
       default:
         if (err instanceof ErrorHandler) {
           logError(req, err.message);
+          
           return res.status(err.statusCode).json({ message: err.message });
+        }else if(err.message){
+          logError(req, err.message);
+          return res.status(err.http_code || 500).json({message: err.message})
+
         }
         logError(req, err);
         //if the error ocurred before sending the response
