@@ -20,9 +20,17 @@ function handleCredentialsRequiredError(req, res) {
 }
 
 function handleDuplicatedKeyError(err, res) {
-  const key = Object.keys(err.keyValue)[0];
-  const value = err.keyValue[key];
-  return res.status(422).json({message:`The "${key}" "${value}" is already used`});
+  const keys = Object.keys(err.keyValue);
+  const values = err.keyValue;
+
+  // Check if the duplicate keys are related to both product and user 
+  if (keys.includes("product") && keys.includes("user")) {
+    return res.status(422).json({message: "You have already submitted a review for this product"});
+  } else {
+    const key = keys[0]
+    const value = values[0]
+    return res.status(422).json({message: `The "${key}" "${value}" is already used`});
+  }
 }
 
 module.exports = (app) => {
