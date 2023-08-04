@@ -39,6 +39,10 @@ const productSchema = new Schema(
         isHeroProduct:{
             type:Boolean,
             default:false
+        },
+        isFavorite:{
+            type:Boolean,
+            default:false
         }
 
 
