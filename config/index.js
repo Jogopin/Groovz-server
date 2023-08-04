@@ -14,6 +14,7 @@ const cookieParser = require("cookie-parser");
 const cors = require("cors");
 
 const FRONTEND_URL = process.env.ORIGIN || "http://localhost:5173";
+const DEVELOPMENT_URL = process.env.DEVELOPMENT_ORIGIN
 
 // Middleware configuration
 module.exports = (app) => {
@@ -24,8 +25,7 @@ module.exports = (app) => {
   // controls a very specific header to pass headers from the frontend
   app.use(
     cors({
-      // origin: [FRONTEND_URL],
-      origin:"*"
+      origin: [FRONTEND_URL,DEVELOPMENT_URL],      
     })
   );
 
