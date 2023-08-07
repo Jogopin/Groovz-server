@@ -27,8 +27,7 @@ router.post("/contact",limiter, (req, res, next) => {
     
     res.json("email sent correctly")
   }).catch((error)=>{
-    console.log("error sending an email",error)
-    res.status(500).json(error)
+    next(error)
   })
   
 });
