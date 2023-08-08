@@ -11,6 +11,7 @@ const {
 } = require("../utils/checkoutHelpers");
 const ErrorHandler = require("../error-handling/ErrorHandler");
 const nodemailer = require("nodemailer");
+const { createMessage } = require("../utils/createMessage");
 
 
 router.post("/checkout", async (req, res, next) => {
@@ -123,13 +124,14 @@ router.post(
               pass: process.env.CONTACT_EMAIL_PASSWORD,
             },
           });
-          const message = `thanks for buying in Groovz, you can check the state of your order in your profile`
+     
+          const message = createMessage(orderUpdated)
+
           await transporter.sendMail({
             from: process.env.CONTACT_EMAIL,
             to: userEmail,
-            subject:"checkout session complete: payed ",
-            text: `${message}`,
-            html: `<p>${message}</p>`,
+            subject:"New Order at Groovz",
+            html: message,
           });
           console.log("checkout session completed!");
           break;
