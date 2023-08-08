@@ -10,6 +10,8 @@ const {
   checkStockAndFormatOrder,
 } = require("../utils/checkoutHelpers");
 const ErrorHandler = require("../error-handling/ErrorHandler");
+const nodemailer = require("nodemailer");
+
 
 router.post("/checkout", async (req, res, next) => {
   try {
@@ -18,7 +20,7 @@ router.post("/checkout", async (req, res, next) => {
 
     // Respond early if no products were supplied in the request
     if (productsToCheckout.length === 0) {
-      throw new ErrorHandler(400,"no items in the cart")
+      throw new ErrorHandler(400, "no items in the cart");
     }
 
     const newCustomerStripe = await stripe.customers.create({
@@ -66,8 +68,7 @@ router.post("/checkout", async (req, res, next) => {
 
     res.json(session.url);
   } catch (error) {
-
-      next(error)
+    next(error);
   }
 });
 
@@ -85,38 +86,68 @@ router.post(
         endpointSecret
       );
 
-      const stripeSessionId = event.data.object.id 
+      const stripeSessionId = event.data.object.id;
       //Handle the event
       switch (event.type) {
         case "checkout.session.completed":
           const stripePaymentId = event.data.object.payment_intent;
-          // Update the Order 
+          // Update the Order
           const orderUpdated = await Order.findOneAndUpdate(
             { stripeSessionId: event.data.object.id },
             { stripePaymentId, status: STATUS.PAID },
             { new: true }
           );
-          if(!orderUpdated){           
-            return next(new ErrorHandler(404,"No matching order found for the provided stripeSessionId"));
+          if (!orderUpdated) {
+            return next(
+              new ErrorHandler(
+                404,
+                "No matching order found for the provided stripeSessionId"
+              )
+            );
           }
           //update the Stock in the DB
-          const updateStockPromises = orderUpdated.products.map(item=>{
-            return Product.findByIdAndUpdate(item.product.toString(),{$inc:{stock:-item.quantity}})
-          })
-          await Promise.all(updateStockPromises)
+          const updateStockPromises = orderUpdated.products.map((item) => {
+            return Product.findByIdAndUpdate(item.product.toString(), {
+              $inc: { stock: -item.quantity },
+            });
+          });
+          await Promise.all(updateStockPromises);
 
+          //send an email to the user
+          
+          const userEmail = event.data.object.customer_details.email
+          let transporter = nodemailer.createTransport({
+            service: "gmail",
+            auth: {
+              user: process.env.CONTACT_EMAIL,
+              pass: process.env.CONTACT_EMAIL_PASSWORD,
+            },
+          });
+          const message = `thanks for buying in Groovz, you can check the state of your order in your profile`
+          await transporter.sendMail({
+            from: process.env.CONTACT_EMAIL,
+            to: userEmail,
+            subject:"checkout session complete: payed ",
+            text: `${message}`,
+            html: `<p>${message}</p>`,
+          });
           console.log("checkout session completed!");
           break;
 
         case "checkout.session.expired":
+          const orderDeleted = await Order.findOneAndDelete({
+            stripeSessionId: event.data.object.id,
+          });
 
-            const orderDeleted = await Order.findOneAndDelete({ stripeSessionId: event.data.object.id })
-            
-            if(orderDeleted){
-                console.log(`checkout session expired => order: ${orderDeleted.id} deleted`);
-            } else {
-                console.log(`checkout session expired => No order found with the provided stripeSessionId: ${stripeSessionId}`);
-            }
+          if (orderDeleted) {
+            console.log(
+              `checkout session expired => order: ${orderDeleted.id} deleted`
+            );
+          } else {
+            console.log(
+              `checkout session expired => No order found with the provided stripeSessionId: ${stripeSessionId}`
+            );
+          }
           break;
         // ... handle other event types
         default:
@@ -126,8 +157,7 @@ router.post(
       // Return a 200 response to acknowledge receipt of the event
       res.json({ received: true });
     } catch (error) {
-      next(error)
-      
+      next(error);
     }
   }
 );
