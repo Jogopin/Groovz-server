@@ -1,10 +1,10 @@
-# Groovz-Client 
+# Groovz-Server
 
 <p align="center">
   <img src="https://res.cloudinary.com/dnvhmjaoc/image/upload/c_fit,h_300,w_900/v1692269864/Groovz_srodcp.png" alt="Logo">
 </p>
 
-Welcome to the Groovz client repository! This project is an e-commerce application designed for headphones and speakers enthusiasts. Beyond being a virtual store, it serves as a practical example of full-stack development. As you explore, please be aware that while you can conduct "purchases" within the platform, all transactions are in test mode (courtesy of Stripe) and no real purchases will be processed.
+Welcome to the Groovz-server repository! This project is an e-commerce application designed for headphones and speakers enthusiasts. Beyond being a virtual store, it serves as a practical example of full-stack development. As you explore, please be aware that while you can conduct "purchases" within the platform, all transactions are in test mode (courtesy of Stripe) and no real purchases will be processed.
 #### Link to the website [Groovz](https://groovz.netlify.app/)
 #### Link to the client side [Groovz-client](https://github.com/Jogopin/Groovz-client)
 ## Tech Stack
